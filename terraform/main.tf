@@ -42,7 +42,7 @@ resource "aws_instance" "node_app" {
   vpc_security_group_ids = [aws_security_group.allow_ssh_http.id]
 
   # Modular and clean: references user_data.sh from scripts/ directory
-  user_data = file("${path.module}/scripts/user_data.sh")
+  user_data = file("${path.module}/../scripts/user_data.sh")
 
   tags = {
     Name = "Node-Boilerplate-App"
