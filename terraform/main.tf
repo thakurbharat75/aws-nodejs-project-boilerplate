@@ -1,6 +1,9 @@
 provider "aws" {
   region = var.aws_region
 }
+resource "random_id" "suffix" {
+  byte_length = 4
+}
 
 resource "aws_key_pair" "deployer" {
   key_name   = "bt-key-${random_id.suffix.hex}"
