@@ -38,12 +38,3 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: 🌐 Get EC2 Public IP
-        id: get_ip
-        working-directory: terraform
-        run: |
-          ip=$(terraform output -raw public_ip)
-          echo "EC2_IP=$ip" >> $GITHUB_ENV
-          echo "::notice title=EC2 Public IP::$ip"
-          echo "App URL: http://$ip:3000"
