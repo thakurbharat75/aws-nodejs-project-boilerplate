@@ -23,15 +23,11 @@ jobs:
         with:
           terraform_version: 1.6.0
 
+
       - name: 🔐 Generate SSH Key Pair
-        id: ssh_key
         run: |
           ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
           echo "TF_VAR_public_key_path=${HOME}/.ssh/id_rsa.pub" >> $GITHUB_ENV
-          echo "PRIVATE_SSH_KEY<<EOF" >> $GITHUB_ENV
-          cat ~/.ssh/id_rsa >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-
       - name: ☁️ Terraform Init
         working-directory: terraform
         run: terraform init
@@ -42,9 +38,3 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-      - name: 🔑 Output Only Private SSH Key (⚠️ Copy from logs)
-        run: |
-          echo "::group::Your SSH Private Key"
-          cat ~/.ssh/id_rsa
-          echo "::endgroup::"
