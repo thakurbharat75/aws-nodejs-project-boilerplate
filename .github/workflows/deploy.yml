@@ -48,6 +48,8 @@ jobs:
     - name: Terraform Apply (Provision EC2)
       working-directory: terraform
       run: terraform apply -auto-approve
+      env:
+        TF_LOG: INFO
 
     - name: Get EC2 Public IP
       id: get_ip
