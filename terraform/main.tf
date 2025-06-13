@@ -3,12 +3,12 @@ provider "aws" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "bt-key"
+  key_name   = "bt-key-${random_id.suffix.hex}"
   public_key = file(var.public_key_path)
 }
 
 resource "aws_security_group" "allow_ssh_http" {
-  name        = "allow_ssh_http"
+  name        = "allow_ssh_http-${random_id.suffix.hex}"
   description = "Allow SSH and HTTP inbound traffic"
 
   ingress {
