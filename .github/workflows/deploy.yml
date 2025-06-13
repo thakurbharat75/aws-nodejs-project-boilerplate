@@ -77,6 +77,6 @@ jobs:
           sudo docker rm node-app || true
           sudo docker run -d --env-file .env -p 3000:3000 --name node-app node-app
 
-    - name: 🔗 Print App URL
-      run: echo "Your app is live at: http://${{ env.EC2_IP }}:3000"
+    - name:  Print App URL
+      run: echo "Your app is live at" http://${{ env.EC2_IP }}:3000"
 
