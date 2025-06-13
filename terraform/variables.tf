@@ -15,10 +15,6 @@ variable "public_key_path" {
   default     = "~/.ssh/id_rsa.pub"
 }
 
-variable "docker_image" {
-  description = "Docker image to run"
-}
-
 variable "app_port" {
   default = 3000
 }
