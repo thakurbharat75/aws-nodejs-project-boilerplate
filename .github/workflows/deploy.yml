@@ -1,10 +1,11 @@
-name: Full Infra + Deploy via Terraform and SSH
+name: Terraform EC2 Deploy with SSH Key
 
 on:
   workflow_dispatch:
 
 jobs:
-  provision-and-deploy:
+  deploy:
+    name: Provision EC2 & Deploy App
     runs-on: ubuntu-latest
 
     env:
@@ -12,71 +13,45 @@ jobs:
       TF_VAR_aws_region: us-east-1
       TF_VAR_ami_id: ami-0c02fb55956c7d316
       TF_VAR_instance_type: t2.micro
-      TF_VAR_public_key_path: "./temp_key.pub"
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Create Temp Public Key File
-      run: echo "${{ secrets.SSH_PUBLIC_KEY }}" > temp_key.pub
+      - name: ⚙️ Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.0
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-      with:
-        terraform_version: 1.6.0
+      - name: 🛠 Install AWS CLI
+        run: |
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
 
-    - name: Terraform Init
-      working-directory: terraform
-      run: terraform init
+      - name: 🔐 Generate SSH Key Pair
+        run: |
+          ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N ""
+          echo "TF_VAR_public_key_path=${HOME}/.ssh/id_rsa.pub" >> $GITHUB_ENV
 
-    - name: Terraform Apply
-      working-directory: terraform
-      run: terraform apply -auto-approve
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: ☁️ Terraform Init
+        working-directory: terraform
+        run: terraform init
 
-    - name: Get EC2 Public IP
-      id: ec2_ip
-      working-directory: terraform
-      run: |
-        ip=$(terraform output -raw public_ip)
-        echo "EC2_IP=$ip" >> $GITHUB_ENV
-        echo "::set-output name=host::$ip"
+      - name: 🚀 Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-    - name: Wait for SSH to be ready
-      run: |
-        echo "Waiting for EC2 to be reachable..."
-        for i in {1..20}; do
-          if nc -zv ${{ env.EC2_IP }} 22; then break; fi
-          sleep 10
-        done
-
-    - name: Copy files to EC2 via SCP
-      uses: appleboy/scp-action@v0.1.4
-      with:
-        host: ${{ env.EC2_IP }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "."
-        target: "~/app"
-
-    - name: SSH into EC2 and Build + Run Docker App
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ env.EC2_IP }}
-        username: ubuntu
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          sudo apt update -y
-          sudo apt install -y docker.io
-          cd ~/app
-          sudo docker build -t node-app .
-          sudo docker stop node-app || true
-          sudo docker rm node-app || true
-          sudo docker run -d --env-file .env -p 3000:3000 --name node-app node-app
-
-    - name:  Print App URL
-      run: echo "Your app is live at" http://${{ env.EC2_IP }}:3000"
+      - name: 🌐 Get EC2 Public IP
+        id: get_ip
+        working-directory: terraform
+        run: |
+          ip=$(terraform output -raw public_ip)
+          echo "EC2_IP=$ip" >> $GITHUB_ENV
+          echo "::notice title=EC2 Public IP::$ip"
+          echo "App URL: http://$ip:3000"
 
